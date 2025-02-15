@@ -338,4 +338,22 @@ def main():
     )
     
     strategy = "fixed"
-    lambda_
+    lambda_min = 0.75
+    lambda_max = 0.95
+
+    train_PO(model, reference_model, train_dataloader, val_dataloader, po_epochs,
+             po_optimizer, po_scheduler, strategy, lambda_min, lambda_max, device)
+
+    final_chosen, final_margin = evaluate_metrics(model, reference_model, val_dataloader, device, lambda_max)
+    wandb.log({
+        "final_chosen_logp": final_chosen,
+        "final_margin": final_margin
+    })
+
+    save_dir = "dpo_shift_trained_model"
+    model.save_pretrained(save_dir)
+    tokenizer.save_pretrained(save_dir)
+    wandb.finish()
+
+if __name__ == "__main__":
+    main()
