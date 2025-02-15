@@ -10,12 +10,12 @@ This project trains language models using two stages:
 
 The SFT stage trains the model to generate responses by minimizing:
 
-![equation](https://latex.codecogs.com/png.latex?%5Cmathcal%7BL%7D_%7B%5Ctext%7BSFT%7D%7D%20%3D%20-%5Clog%20P%28r%20%5Cmid%20p%29)
+$$ \mathcal{L}_\text{SFT} = -\log P(r|p) $$
 
 Where:
-- `p` is the prompt
-- `r` is the desired response
-- `P(r|p)` is the model's probability of generating response `r` given prompt `p`
+- $p$ is the prompt
+- $r$ is the desired response
+- $P(r|p)$ is the model's probability of generating response $r$ given prompt $p$
 
 ### 2. DPO with Lambda Shifting
 
@@ -23,27 +23,35 @@ The DPO stage uses paired responses (chosen vs rejected) to optimize preferences
 
 For each pair, we compute:
 
-![equation](https://latex.codecogs.com/png.latex?%5CDelta_%7Bchosen%7D%20%3D%20%5Clog%20%5Cfrac%7BP_%7Bpolicy%7D%28r_%7Bchosen%7D%20%5Cmid%20p%29%7D%7BP_%7Bref%7D%28r_%7Bchosen%7D%20%5Cmid%20p%29%7D)
+$$ \Delta_\text{chosen} = \log \frac{P_\text{policy}(r_\text{chosen}|p)}{P_\text{ref}(r_\text{chosen}|p)} $$
 
-![equation](https://latex.codecogs.com/png.latex?%5CDelta_%7Brejected%7D%20%3D%20%5Clog%20%5Cfrac%7BP_%7Bpolicy%7D%28r_%7Brejected%7D%20%5Cmid%20p%29%7D%7BP_%7Bref%7D%28r_%7Brejected%7D%20%5Cmid%20p%29%7D)
+$$ \Delta_\text{rejected} = \log \frac{P_\text{policy}(r_\text{rejected}|p)}{P_\text{ref}(r_\text{rejected}|p)} $$
 
 The loss function is:
 
-![equation](https://latex.codecogs.com/png.latex?%5Cmathcal%7BL%7D_%7BDPO%7D%20%3D%20-%5Clog%20%5Csigma%28%5Cbeta%28%5CDelta_%7Bchosen%7D%20-%20%5Clambda%20%5CDelta_%7Brejected%7D%29%29)
+$$ \mathcal{L}_\text{DPO} = -\log \sigma(\beta(\Delta_\text{chosen} - \lambda \Delta_\text{rejected})) $$
 
 Where:
-- `λ` (lambda) is dynamically adjusted using different strategies
-- `β` is a temperature parameter
-- `σ` is the sigmoid function
+- $\lambda$ (lambda) is dynamically adjusted using different strategies
+- $\beta$ is a temperature parameter
+- $\sigma$ is the sigmoid function
+
+## Lambda Scheduling Strategies
+
+1. Fixed:
+   $$ \lambda = \text{constant} $$
+
+2. Linear increase:
+   $$ \lambda = \lambda_\text{min} + t(\lambda_\text{max} - \lambda_\text{min}) $$
+
+3. Linear decrease:
+   $$ \lambda = \lambda_\text{max} - t(\lambda_\text{max} - \lambda_\text{min}) $$
+
+where $t$ is the normalized training step $(0 \leq t \leq 1)$
 
 ## Key Features
 
-- Three lambda scheduling strategies:
-  - Fixed: `λ = constant`
-  - Linear increase: `λ = λ_min + t(λ_max - λ_min)`
-  - Linear decrease: `λ = λ_max - t(λ_max - λ_min)`
-  where `t` is the normalized training step
-
+- Dynamic lambda scheduling
 - Automatic checkpointing
 - W&B logging for:
   - Training/validation losses
